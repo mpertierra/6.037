@@ -24,7 +24,7 @@
 "Problem 2: A rectangle under Bitdiddle's function"
 
 ;; Assuming that x1 <= x2, we have that the width of the rectangle is
-;; x2 - x1 and the height is f(x1) so the area under the curve is (x2 - x1) * f(x1)
+;; x2 - x1 and the height is f(x1) so the area of the rectangle is (x2 - x1) * f(x1)
 (define (bitfunc-rect x1 x2)
     (* (- x2 x1) (bitfunc x1)))
 
@@ -42,6 +42,7 @@
 ;; The total area of a number of rectangles with N steps between x1 and x2 is equal to
 ;; the area of the first rectangle (which is bitfunc-rect of x1 and x1 + (x2-x1)/N), plus
 ;; the total area of the number of rectangles with N-1 steps between x1 + (x2-x1)/N and x2.
+;; The base case is when the number of steps is 0. In this case, the area is 0.
 (define (bitfunc-integral-recur num-steps x1 x2)
   (if (= num-steps 0)
       0
@@ -52,7 +53,8 @@
           x2))))
 
 ;; For the iterative algorithm, we use a helper procedure that keeps an additional argument to keep track
-;; of the area.
+;; of the area, as we iterate from N steps to 0 steps. Initially, the area argument is 0.
+;; When we reach 0 steps, we return the area argument, which holds the answer.
 (define (bitfunc-integral-iter num-steps x1 x2)
     (bitfunc-integral-iter-helper num-steps x1 x2 0))
 
