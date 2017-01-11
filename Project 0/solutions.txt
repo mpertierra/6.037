@@ -68,6 +68,13 @@
        (+ area (bitfunc-rect x1 (+ x1 (/ (- x2 x1) num-steps)))))))
 
 ;; Test cases:
+;; Note that if num-steps 0, the area should always be 0
+;(bitfunc-integral-recur 0 10 10) ;; Should be 0
+;(bitfunc-integral-recur 0 5 10)  ;; Should be 0
+
+;(bitfunc-integral-iter 0 10 10)  ;; Should be 0
+;(bitfunc-integral-iter 0 5 10)   ;; Should be 0
+
 ;; Note that (bitfunc-integral-recur 1 x1 x2) and (bitfunc-integral-iter 1 x1 x2) should be the same as (bitfunc-rect x1 x2)
 ;(bitfunc-integral-recur 1 0 1)   ;; Should be 4
 ;(bitfunc-integral-recur 1 0 0.5) ;; Should be 2
