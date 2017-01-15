@@ -158,7 +158,7 @@
 
 "Problem 9: Additional testing"
 
-; Additional test cases for 'derivative':
+;; Additional test cases for 'derivative':
 ;; (derivative 'x '(+ 3 (* x x))) ;; Should be (+ 0 (+ (* x 1) (* 1 x))), evaluates to 2x
 ;; (derivative 'x '(* 3 (* x x))) ;; Should be (+ (* 3 (+ (* x 1) (* 1 x))) (* 0 (* x x))), evaluates to 6x
 ;; (derivative 'x '(+ x (* x x))) ;; Should be (+ 1 (+ (* x 1) (* 1 x))), evaluates to 1 + 2x
