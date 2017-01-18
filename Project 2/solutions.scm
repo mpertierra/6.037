@@ -172,7 +172,41 @@
 
 "Problem 4"
 
-;; memoize
+(define (memoize func)
+  (let ((cache (make-table)))
+    (lambda (input)
+      (cond
+        ((or (eq? input 'reset-call-count) (eq? input 'how-many-calls?)) (func input)) ;; Do not cache special symbols
+        ((table-has-key? cache input) (table-get cache input))
+        (else
+          (let ((ans (func input)))
+            (table-put! cache input ans)
+            ans
+          )
+        )
+      )
+    )
+  )
+)
+
+;; Test cases:
+;; If we observe the number of calls now to "fib", we see that the values are actually being cached, as
+;; we have that "fib" is being called 0 times for "small" problems after solving a "large" problem.
+;; That is, we are retrieving the answers to smaller problems directly from the cache.
+;; Because the num-calls-table is constructed in a "top-down" fashion (from fib(max) to fib(1)),
+;; the values for fib(i) for i=1:max-1 are already cached after calculating fib(max).
+; (set! fib (memoize fib))
+; (make-num-calls-table fib 1)  ;; => (table (1 1))
+; (make-num-calls-table fib 5)  ;; => (table (1 0) (2 0) (3 0) (4 0) (5 5))
+; (make-num-calls-table fib 10) ;; => (table (1 0) (2 0) (3 0) (4 0) (5 0) (6 0) (7 0) (8 0) (9 0) (10 5))
+; (make-num-calls-table fib 10) ;; => (table (1 0) (2 0) (3 0) (4 0) (5 0) (6 0) (7 0) (8 0) (9 0) (10 0))
+;; Some tests for correctness and timing observations
+; (fib 1)     ;; => 1
+; (fib 5)     ;; => 5
+; (fib 8)     ;; => 21
+; (fib 10000) ;; Should take about 5 seconds
+; (fib 10000) ;; Should take less than a second
+
 
 "Problem 5 (optional)"
 
