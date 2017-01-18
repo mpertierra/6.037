@@ -210,11 +210,56 @@
 
 "Problem 5 (optional)"
 
-;; advise
+(define (advise func before after)
+  (lambda (input)
+    (let ((output 'uninitialized))
+      (before)
+      (set! output (func input))
+      (after)
+      output
+    )
+  )
+)
+
+;; Test cases:
+; (define (add-1 x) (+ x 1))
+; (define advised-add-1
+;   (advise add-1
+;     (lambda () (displayln "calling add-1"))
+;     (lambda () (displayln "add-1 done"))))
+; (advised-add-1 5) ;; Should print: "calling add-1" (newline) "add-1 done" (newline) 6
+
 
 "Problem 6 (optional)"
 
-;; make-monitored-with-advice
+(define (make-monitored-with-advice func)
+  (let ((call-count 0)
+        (depth 0))
+    (advise func
+      (lambda ()
+        (set! depth (+ depth 1))
+        (set! call-count (+ call-count 1))
+      )
+      (lambda ()
+        (set! depth (- depth 1))
+        (if (= depth 0)
+          (begin
+            (printf "Num steps: ~a\n" call-count)
+            (set! call-count 0)
+          )
+          void
+        )
+      )
+    )
+  )
+)
+
+;; Test cases:
+; (set! fib (make-monitored-with-advice fib))
+; (fib 1)  ;; Should print: "Num calls: 1" (newline) 1
+; (fib 5)  ;; Should print: "Num calls: 15" (newline) 5
+; (fib 10) ;; Should print: "Num calls: 177" (newline) 55
+; (fib 10) ;; Should print: "Num calls: 177" (newline) 55
 
 
 ;; Allow this file to be included from elsewhere, and export all defined
