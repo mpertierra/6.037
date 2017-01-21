@@ -105,6 +105,7 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
+        ((and? exp) (eval-and exp env)) ;; ==== QUESTION 2 ====
         ((lambda? exp)
          (make-procedure (lambda-parameters exp) (lambda-body exp) env))
         ((begin? exp) (eval-sequence (begin-actions exp) env))
@@ -344,7 +345,15 @@
         (list '= =)
         (list 'display display)
         (list 'not not)
-        ; ... more primitives
+        ;; ==== QUESTION 1 ====
+        (list '* *)
+        (list '/ /)
+        (list 'list list)
+        (list 'cadr cadr)
+        (list 'cddr cddr)
+        (list 'newline newline)
+        (list 'printf printf)
+        (list 'length length)
         ))
 
 (define (primitive-procedure-names) (mmap car (primitive-procedures)))
@@ -413,3 +422,88 @@
   ;; Update the meval-depth variable inside the environment we're simulating
   (set-variable-value! 'meval-depth (+ meval-depth 1) the-global-environment)
   'loaded)
+
+
+;; ==== QUESTION 1 ====
+
+;; See the procedure "primitive-procedures" in line 333
+
+;; Test cases:
+; (* 5 10)     ;; => 50
+; (/ 5 10)     ;; => 1/2
+; (list 1 2 3) ;; => (1 2 3)
+; (define x (list 1 2 3 4 5)) ;; => #<void>
+; (cadr x)     ;; => 2
+; (cddr x)     ;; => (3 4 5)
+; (newline)    ;; => Should print a new line. There should be two blank lines now (instead of one) before the next ";;; M-Eval value:"
+; (printf "Testing: ~a" 5) ;; Should print "Testing: 5"
+; (length x)   ;; => 5
+
+
+;; ==== QUESTION 2 ====
+
+;; Attempting to define an "and" procedure at the M-Eval prompt will not work because
+;; "and" needs to be special form and not just a procedure. Attempting to implement "and"
+;; as a procedure at the M-Eval prompt could result in some unintended side-effects, as the arguments
+;; passed to our "and" procedure would be evaluated before the procedure is applied.
+
+;; Suppose we enter the definition below at the M-Eval prompt.
+
+;; (define and (lambda (x y) (if x (begin (if y y #f)) #f)))
+
+;; It defines "and" to be a procedure that takes two arguments "x" and "y".
+;; If "x" is truthy, it checks if "y" is truthy, and returns "y" if it is truthy; it returns false, otherwise.
+;; If "x" is false then it returns false.
+
+;; It almost seems like it would work, as it seems to have the same short-ciruit logic that we would expect.
+;; However, consider the sequence of expressions below:
+
+;; (define z 5)
+;; (and #f (set! z 500000))  ;; => #f
+;; z                         ;; => 500000
+
+;; What is the value of "z" after this?
+;; We would expect short-ciruit evaluation of "and" to stop after seeing the first argument being false,
+;; and so "z" would still have value 5.
+
+;; However, as mentioned before, because "and" here is not a special form, its arguments will be evaluated before
+;; the "and" is applied, so the second argument (set! z 500000) will always be evaluated no matter what the first
+;; argument is, and thus "z" will have value 500000.
+
+;; We can test that "and" as a special form does have the proper short-circuit evaluation and if we ran the
+;; same expressions above without using our evaluator, "z" would have value 5.
+
+(define (and? exp) (tagged-list? exp 'and))
+(define (and-clauses exp) (cdr exp))
+(define (first-and-clause exp) (car (and-clauses exp)))
+(define (rest-and-clauses exp) (cdr (and-clauses exp)))
+(define (empty-and-clauses? exp) (null? (and-clauses exp)))
+(define (last-and-clause? exp) (null? (cdr (and-clauses exp))))
+(define (make-and clauses) (cons 'and clauses))
+(define (eval-and exp env)
+  (cond
+    ((empty-and-clauses? exp) #t)
+    ((last-and-clause? exp) (and (m-eval (first-and-clause exp) env)))
+    (else
+      (and
+        (m-eval (first-and-clause exp) env)
+        (eval-and (make-and (rest-and-clauses exp)) env)))))
+
+;; Test cases:
+; (and)             ;; => #t
+; (and #f)          ;; => #f
+; (and 5)           ;; => 5
+; (and 1 2 3)       ;; => 3
+; (and 1 (< 3 1) 3) ;; => #f
+; (define x 3)
+; (and (< x 5) (= 6 6) (null? '())) ;; => #t
+; (set! x 6)
+; (and (< x 5) (= 6 6) (null? '())) ;; => #f
+; (define z 5)
+; (and #f (set! z 500000))  ;; => #f
+; (and z)                   ;; => 5
+; (and (set! z 500000) z)   ;; => 500000
+; (and z)                   ;; => 500000
+
+
+
