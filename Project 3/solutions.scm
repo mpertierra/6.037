@@ -111,6 +111,7 @@
         ((begin? exp) (eval-sequence (begin-actions exp) env))
         ((cond? exp) (m-eval (cond->if exp) env))
         ((let? exp) (m-eval (let->application exp) env))
+        ((until? exp) (m-eval (until->transformed exp) env)) ;; ==== QUESTION 3 ====
         ((time? exp) (time (m-eval (second exp) env)))
         ((application? exp)
          (m-apply (m-eval (operator exp) env)
@@ -426,7 +427,7 @@
 
 ;; ==== QUESTION 1 ====
 
-;; See the procedure "primitive-procedures" in line 333
+;; See the procedure "primitive-procedures" for implementation.
 
 ;; Test cases:
 ; (* 5 10)     ;; => 50
@@ -483,7 +484,7 @@
 (define (eval-and exp env)
   (cond
     ((empty-and-clauses? exp) #t)
-    ((last-and-clause? exp) (and (m-eval (first-and-clause exp) env)))
+    ((last-and-clause? exp) (m-eval (first-and-clause exp) env))
     (else
       (and
         (m-eval (first-and-clause exp) env)
@@ -505,5 +506,35 @@
 ; (and (set! z 500000) z)   ;; => 500000
 ; (and z)                   ;; => 500000
 
+
+;; ==== QUESTION 3 ====
+
+(define (until? exp) (tagged-list? exp 'until))
+(define (until-test exp) (cadr exp))
+(define (until-exps exp) (cddr exp))
+(define (until->transformed exp)
+  `(let ()
+    (define (loop)
+      (if ,(until-test exp)
+        #t
+        (begin
+          ,@(until-exps exp)
+          (loop))))
+    (loop)))
+
+;; Test cases:
+;; Running this outside of our evaluator
+; (define u1 '(until (> x n) (printf "~s~n" x) (set! x (+ x 1))))
+; (until->transformed u1)    ;; => (let () (define (loop) (if (> x n) #t (begin (printf "~s~n" x) (set! x (+ x 1)) (loop)))) (loop))
+; (define u2 '(until test))
+; (until->transformed u2)    ;; => (let () (define (loop) (if test #t (begin (loop)))) (loop))
+; (define u3 '(until test exp1))
+; (until->transformed u3)    ;; => (let () (define (loop) (if test #t (begin exp1 (loop)))) (loop))
+; (define u4 '(until test exp1 exp2 exp3))
+; (until->transformed u4)    ;; => (let () (define (loop) (if test #t (begin exp1 exp2 exp3 (loop)))) (loop))
+;; Running this using our evaluator
+; (define x 0)
+; (define n 5)
+; (until (> x n) (printf "~s~n" x) (set! x (+ x 1))) ;; Should print 0 1 2 3 4 5 (on separate lines) and return true
 
 
