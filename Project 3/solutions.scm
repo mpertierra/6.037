@@ -103,6 +103,7 @@
         ((variable? exp) (lookup-variable-value exp env))
         ((quoted? exp) (text-of-quotation exp))
         ((assignment? exp) (eval-assignment exp env))
+        ((unset? exp) (eval-unset exp env)) ;; ==== QUESTION 4 ====
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
         ((and? exp) (eval-and exp env)) ;; ==== QUESTION 2 ====
@@ -224,10 +225,10 @@
   (if (binding? binding)
       (third binding)
       (error "Not a binding: " binding)))
-(define (set-binding-value! binding val)
-  (if (binding? binding)
-      (set-car! (cddr binding) val)
-      (error "Not a binding: " binding)))
+; (define (set-binding-value! binding val)     ;; ==== QUESTION 4 ====  Redefined, moved to end of file.
+;   (if (binding? binding)
+;       (set-car! (cddr binding) val)
+;       (error "Not a binding: " binding)))
 
 ; frames
 (define (make-frame variables values)
@@ -322,7 +323,7 @@
   (let ((frame (environment-first-frame env)))
     (let ((binding (find-in-frame var frame)))
       (if binding
-          (set-binding-value! binding val)
+          (reset-binding! binding val) ;; ==== QUESTION 4 ====
           (add-binding-to-frame!
            (make-binding var val)
            frame)))))
@@ -536,5 +537,65 @@
 ; (define x 0)
 ; (define n 5)
 ; (until (> x n) (printf "~s~n" x) (set! x (+ x 1))) ;; Should print 0 1 2 3 4 5 (on separate lines) and return true
+
+
+;; ==== QUESTION 4 ====
+
+;; A binding keeps track of the all of the values the variable has had over time
+;; If a variable "var" has had values "val1", "val2", ..., "valn-1", "valn" over time (starting with "val1" and ending with "valn"),
+;; then the binding would be (list 'binding var valn valn-1 ... val2 val1)
+
+;; If n > 1, then when we unset, the binding becomes (list 'binding var valn-1 ... val2 val1)
+;; Else, if n == 1 (that is, the binding is currently (list 'binding var val1)),
+;;       then when we unset, the binding remains the same (list 'binding var val1)
+
+;; When we define a variable that already had a binding, we reset the binding by clearing the history of previous values
+
+(define (one-binding-value? binding) (null? (cdddr binding)))
+(define (set-binding-value! binding val)
+  (if (binding? binding)
+      (set-cdr! (cdr binding) (cons val (cddr binding)))
+      (error "Not a binding: " binding)))
+(define (unset-binding-value! binding)
+  (cond
+    ((not (binding? binding)) (error "Not a binding: " binding))
+    ((one-binding-value? binding) (void))
+    (else
+      (set-cdr! (cdr binding) (cdddr binding)))))
+(define (reset-binding! binding val)
+  (if (binding? binding)
+      (set-cdr! (cdr binding) (cons val '()))
+      (error "Not a binding: " binding)))
+
+
+(define (unset? exp) (tagged-list? exp 'unset!))
+(define (unset-variable exp) (cadr exp))
+(define (eval-unset exp env)
+  (let ((var (unset-variable exp)))
+    (let ((binding (find-in-environment var env)))
+      (if binding
+        (unset-binding-value! binding)
+        (error "Unbound variable -- UNSET" var)))))
+
+;; Test cases:
+; (unset! x) ;; Should throw error with message "Unbound variable -- UNSET x"
+; (define x 5)
+; x ;; => 5
+; (set! x 10)
+; (set! x 11)
+; (set! x 12)
+; x ;; => 12
+; (unset! x)
+; x ;; => 11 (unset! undoes one of the set!'s)
+; (unset! x)
+; x ;; => 10 (unset! undoes the previous set!)
+; (unset! x)
+; x ;; => 5 (and again)
+; (unset! x)
+; x ;; => 5 (unset! more times than set! is fine)
+; (define x 15)
+; (unset! x)
+; x ;; => 15 (most recent value defined to x)
+
 
 
