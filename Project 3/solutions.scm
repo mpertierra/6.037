@@ -377,8 +377,20 @@
         (list 'newline newline)
         (list 'printf printf)
         (list 'length length)
+        (list 'append append)
         (list 'eq? eq?)
         (list 'equal? equal?)
+        ;; ==== QUESTION 6 ====
+        ;; Tested in under question 1.
+        (list 'caddr caddr)
+        (list 'cadddr cadddr)
+        (list 'caadr caadr)
+        (list 'cdadr cdadr)
+        (list 'symbol? symbol?)
+        (list 'pair? pair?)
+        (list 'number? number?)
+        (list 'string? string?)
+        (list 'boolean? boolean?)
         ;; ==== QUESTION 5 ====
         (list 'env-variables env-variables)
         (list 'env-parent env-parent)
@@ -467,6 +479,37 @@
 ; (newline)    ;; => Should print a new line. There should be two blank lines now (instead of one) before the next ";;; M-Eval value:"
 ; (printf "Testing: ~a" 5) ;; Should print "Testing: 5"
 ; (length x)   ;; => 5
+; (append x '())           ;; => (1 2 3 4 5)
+; (append x (list 6 7 8))  ;; => (1 2 3 4 5 6 7 8)
+; (eq? 'x x)   ;; => #f
+; (eq? 1.0 1)  ;; => #f
+; (eq? x (list 1 2 3 4 5)) ;; => #f
+; (eq? 'x 'x)  ;; => #t
+; (equal? 'x x)   ;; => #f
+; (equal? 1.0 1)  ;; => #f
+; (equal? x (list 1 2 3 4 5)) ;; => #t
+; (equal? 'x 'x)  ;; => #t
+; (caddr x)       ;; => 3
+; (cadddr x)      ;; => 4
+; (caadr (list 1 (list 2 3 4) 5)) ;; => 2
+; (cdadr (list 1 (list 2 3 4) 5)) ;; => (3 4)
+; (symbol? x)     ;; => #f
+; (symbol? 'x)    ;; => #t
+; (symbol? '())   ;; => #f
+; (pair? 5)       ;; => #f
+; (pair? 'x)      ;; => #f
+; (pair? '())     ;; => #f
+; (pair? x)       ;; => #t
+; (number? 'x)    ;; => #f
+; (number? #f)    ;; => #f
+; (number? x)     ;; => #f
+; (number? (length x)) ;; => #t
+; (string? 'x)    ;; => #f
+; (string? x)     ;; => #f
+; (string? "x")   ;; => #t
+; (boolean? (> 3 4))  ;; => #t
+; (boolean? (< 3 4))  ;; => #t
+; (boolean? '(< 3 4)) ;; => #t
 
 
 ;; ==== QUESTION 2 ====
@@ -540,15 +583,28 @@
 (define (until? exp) (tagged-list? exp 'until))
 (define (until-test exp) (cadr exp))
 (define (until-exps exp) (cddr exp))
-(define (until->transformed exp)
-  `(let ()
-    (define (loop)
-      (if ,(until-test exp)
-        #t
-        (begin
-          ,@(until-exps exp)
-          (loop))))
-    (loop)))
+;; This was the old code used for question 3.
+;; We need to rewrite it without using quasiquote for question 6.
+; (define (until->transformed exp)
+;   `(let ()
+;     (define (loop)
+;       (if ,(until-test exp)
+;         #t
+;         (begin
+;           ,@(until-exps exp)
+;           (loop))))
+;     (loop)))
+(define (until->transformed exp) ;; ==== QUESTION 6 ====
+  (make-let
+    '()
+    (list
+      (make-define
+        '(loop)
+        (make-if
+            (until-test exp)
+            #t
+            (make-begin (append (until-exps exp) (list '(loop))))))
+      '(loop))))
 
 ;; Test cases:
 ;; Running this outside of our evaluator
@@ -627,7 +683,6 @@
 
 ;; ==== QUESTION 5 ====
 
-
 ;; Boxed-environment helper procedures
 (define (boxed-env? boxed-env)
   (and
@@ -670,4 +725,39 @@
 ; (env-variables e)  ;; => (n)
 ; (equal? (env-parent (env-parent e)) ee) ;; => #t
 
+
+;; ==== QUESTION 6 ====
+
+;; The additional necessary primitive procedures have been added and tested in question 1's section.
+;; We will be using the "fib" procedure from Project 2: (define (fib n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+
+;; Timing the "fib" procedure in Scheme, one level of m-eval, and two levels of m-eval.
+;; We see that in Scheme, (fib 8) takes less than a millisecond to compute.
+;; In one level of m-eval, (fib 8) takes about 3 milliseconds to compute.
+;; In two levels of m-eval, (fib 8) takes about 1 second to compute.
+
+; (define (fib n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+; (time (fib 8))    ;; Should print "cpu time: 0 real time: 0 gc time: 0" and return 21
+; (load-meval-defs) ;; Should print "loaded"
+; (driver-loop)     ;; Should go to M-Eval input level 1
+; (define (fib n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+; (time (fib 8))    ;; Should print "cpu time: 3 real time: 3 gc time: 0" and return 21
+; (driver-loop)     ;; Should go to M-Eval input level 2
+; (define (fib n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+; (time (fib 8))    ;; Should print "cpu time: 1019 real time: 1019 gc time: 29" and return 21
+;  **quit**         ;; Should print "meval-done" and go to first level
+
+;; We're still in one level of m-eval. Now we time simple math operations at three levels of m-eval.
+;; At three levels of m-eval, simple math operations (addition, multiplication, division)
+;; take about 6-8 seconds to compute.
+;; So, it's expected for (fib 8) to take many minutes to compute at this level.
+;; In fact, when we run it, we see that it takes about 1873 seconds, or 31 minutes!
+
+; (load-meval-defs) ;; Should print "loaded"
+; (driver-loop)     ;; Should go to M-Eval input level 2
+; (driver-loop)     ;; Should go to M-Eval input level 3
+; (time (+ 3 4))    ;; Should print "cpu time: 5850 real time: 5844 gc time: 85" and return 7
+; (time (* 3 4))    ;; Should print "cpu time: 7719 real time: 7736 gc time: 94" and return 12
+; (time (/ 3 4))    ;; Should print "cpu time: 8062 real time: 8079 gc time: 96" and return 12
+; (time (fib 8))    ;; Should print "cpu time: 1841877 real time: 1872755 gc time: 13768" and return 21
 
