@@ -106,13 +106,15 @@
         ((unset? exp) (eval-unset exp env)) ;; ==== QUESTION 4 ====
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
-        ((and? exp) (eval-and exp env)) ;; ==== QUESTION 2 ====
+        ((and? exp) (eval-and exp env))     ;; ==== QUESTION 2 ====
         ((lambda? exp)
          (make-procedure (lambda-parameters exp) (lambda-body exp) env))
         ((begin? exp) (eval-sequence (begin-actions exp) env))
         ((cond? exp) (m-eval (cond->if exp) env))
         ((let? exp) (m-eval (let->application exp) env))
         ((until? exp) (m-eval (until->transformed exp) env)) ;; ==== QUESTION 3 ====
+        ((current-env? exp) (eval-current-env env))          ;; ==== QUESTION 5 ====
+        ((procedure-env? exp) (eval-procedure-env exp env))  ;; ==== QUESTION 5 ====
         ((time? exp) (time (m-eval (second exp) env)))
         ((application? exp)
          (m-apply (m-eval (operator exp) env)
@@ -328,7 +330,26 @@
            (make-binding var val)
            frame)))))
 
-; primitives procedures - hooks to underlying Scheme procs
+; primitives procedures - hooks to underlying Scheme procs and user-defined primitive procedures
+
+;; ==== QUESTION 5 ====
+(define (env-variables boxed-env)
+  (frame-variables
+    (environment-first-frame
+      (unbox-env boxed-env))))
+
+(define (env-parent boxed-env)
+  (box-env (enclosing-environment (unbox-env boxed-env))))
+
+(define (env-value sym boxed-env)
+  (if (symbol? sym)
+    (let ((binding (find-in-environment sym (unbox-env boxed-env))))
+      (if binding
+        (binding-value binding)
+        #f))
+    (error "Not a symbol: " sym)))
+;; ====================
+
 (define (make-primitive-procedure implementation)
   (list 'primitive implementation))
 (define (primitive-procedure? proc) (tagged-list? proc 'primitive))
@@ -356,6 +377,12 @@
         (list 'newline newline)
         (list 'printf printf)
         (list 'length length)
+        (list 'eq? eq?)
+        (list 'equal? equal?)
+        ;; ==== QUESTION 5 ====
+        (list 'env-variables env-variables)
+        (list 'env-parent env-parent)
+        (list 'env-value env-value)
         ))
 
 (define (primitive-procedure-names) (mmap car (primitive-procedures)))
@@ -597,5 +624,50 @@
 ; (unset! x)
 ; x ;; => 15 (most recent value defined to x)
 
+
+;; ==== QUESTION 5 ====
+
+
+;; Boxed-environment helper procedures
+(define (boxed-env? boxed-env)
+  (and
+    (box? boxed-env)
+    (environment? (unbox boxed-env))))
+(define (box-env env)
+  (if (environment? env)
+    (box-immutable env)
+    (error "Not an environment: " env)))
+(define (unbox-env boxed-env)
+  (if (boxed-env? boxed-env)
+    (unbox boxed-env)
+    (error "Not an environment: " boxed-env)))
+
+;; New special forms
+;; "current-env" and "procedure-env" evaluation procedures and helper procedures
+(define (current-env? exp) (tagged-list? exp 'current-env))
+(define (eval-current-env env) (box-env env))
+
+(define (procedure-env? exp) (tagged-list? exp 'procedure-env))
+(define (eval-procedure-env exp env)
+  (box-env (procedure-environment (m-eval (second exp) env))))
+
+;; New procedures
+;; "env-variables", "env-parent", and "env-value" evaluation procedures
+;; These definitions need to be placed before the "primitive-procedures" procedures (see line 335)
+
+;; Test cases
+; (define (make-counter) (let ((n 0)) (lambda () (set! n (+ n 1)) n)))
+; (define c (make-counter))
+; (c) ;; => 1
+; (c) ;; => 2
+; (env-value 'n (procedure-env c)) ;; => 2
+; (define e (procedure-env c))
+; (env-value 'n e)                  ;; => 2
+; (define ee (current-env))
+; ee    ;; Should contain bindings for ee, e, c, make-counter, as well as all primitives, in that order
+; (env-variables ee) ;; Should contain ee, e, c, make-counter, as well as all primitives, in that order
+; (env-value 'n ee)  ;; => #f
+; (env-variables e)  ;; => (n)
+; (equal? (env-parent (env-parent e)) ee) ;; => #t
 
 
