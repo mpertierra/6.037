@@ -126,6 +126,7 @@
           (extend-environment (make-frame (procedure-parameters procedure)  
                                           arguments)
                               (procedure-environment procedure))))
+        ((instance? procedure) (oo-apply-instance procedure arguments)) ;; PROBLEM 4
         (else (oo-error "Unknown procedure type -- APPLY" procedure))))
 
 (define (list-of-values exps env)
@@ -589,6 +590,8 @@
     (oo-eval (make-class-parent-class exp) env)
     (make-class-slots exp)
     (map
+      ;; method variable is a two-element list containing the method's name and its procedure
+      ;; we must evaluate the procedure but not the name for each method
       (lambda (method) (list (first method) (oo-eval (second method) env)))
       (make-class-methods exp))))
 
@@ -599,7 +602,7 @@
       (oo-error "Applications of instances must include a method name as the first argument. Instance:" instance)
       (let ((methodname (car arguments))
             (methodargs (cdr arguments)))
-        'BRRRRRRRRRAAAAAINS?)))
+        (method-call instance methodname (instance-class instance) methodargs))))
 
 ;; Call a method on an object (variable arguments form)
 (define (invoke instance method . args)
@@ -622,11 +625,15 @@
 	(apply proc instance args) ;; Kludge to make the default-metaclass' methods work and bootstrap us.
 	(let* ((proc-env  
 	        (procedure-environment proc)) ;; Normal case, method defined by user through oo-eval with make-class
-
+         (slots-env  ;; PROBLEM 4
+            (extend-environment
+              (make-frame-from-bindings
+                (map make-binding-shared (instance-state instance)))
+              proc-env))
 	       (args-env
 	        (extend-environment (make-frame (procedure-parameters proc) 
                                                 args)
-                                    proc-env))
+                                    slots-env))
 	       (selfsuper-env 
                 (extend-environment (make-frame '(self super)
                                                 (list instance (make-super instance parent-class)))
