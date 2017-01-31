@@ -111,6 +111,7 @@
         ((let? exp) (oo-eval (let->application exp) env))
         ((and? exp) (eval-and exp env))
         ((or? exp) (eval-or exp env))
+        ((make-class? exp) (eval-make-class exp env)) ;; PROBLEM 2
         ((application? exp)
          (oo-apply (oo-eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -576,8 +577,19 @@
 
 
 ;; oo-eval should call this to handle the make-class special form
+(define (make-class? exp) (tagged-list? exp 'make-class))
+(define (make-class-name exp) (second exp))
+(define (make-class-parent-class exp) (third exp))
+(define (make-class-slots exp) (fourth exp))
+(define (make-class-methods exp) (fifth exp))
 (define (eval-make-class exp env)  ;; PROBLEM 2
-  'something-involving-create-class?)
+  (create-class
+    (oo-eval (make-class-name exp) env)
+    (oo-eval (make-class-parent-class exp) env)
+    (make-class-slots exp)
+    (map
+      (lambda (method) (list (first method) (oo-eval (second method) env)))
+      (make-class-methods exp))))
 
 
 ;; PROBLEM 4
