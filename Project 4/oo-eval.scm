@@ -525,7 +525,7 @@
   (read-slot class ':name))
 
 (define (create-class name parent-class slots methods)
-  'BRAINSBRAINSBRAINSBRAINS) ;; PROBLEM 1
+  (make-instance default-metaclass name parent-class slots methods)) ;; PROBLEM 1
 
 
 ; What's the class of a class? You just met-ah!
