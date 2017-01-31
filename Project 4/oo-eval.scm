@@ -426,6 +426,7 @@
 
         (list 'run-file run-file)
         (list 'apply oo-apply)
+  (list 'new make-instance) ;; PROBLEM 3
 
         ))
 
