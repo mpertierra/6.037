@@ -570,7 +570,14 @@
 		       (append (map car (read-slot self ':methods))
 			       (if (read-slot self ':parent-class)
 				   (invoke (read-slot self ':parent-class) 'GET-METHODS)
-				   '())))))))))
+				   '()))))
+       
+       ;; PROBLEM 5
+       (GET-TYPES ,(lambda (self)
+         (append (list (read-slot self ':name))
+           (if (read-slot self ':parent-class)
+         (invoke (read-slot self ':parent-class) 'GET-TYPES)
+         '())))))))))
 
 
 
