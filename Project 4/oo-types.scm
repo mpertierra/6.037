@@ -271,8 +271,10 @@
                   (new clock-callback 'time-passes self 'ACT))))
     (ACT
      (lambda ()
-       (self 'AUTO-MOVE)
-       (self 'AUTO-TAKE)))
+       ;; PROBLEM 9
+       (for-each
+          (lambda (method) (if (symbol-prefix? 'AUTO- method) (self method) 'do-nothing))
+          ((self 'GET-CLASS) 'GET-METHODS))))
     (AUTO-MOVE
      (lambda ()
        (if (< (random 10) :restlessness)
@@ -314,10 +316,13 @@
     (NAME
      (lambda ()
        (symbol-append 'zombie-of- :name)))
-    (ACT
-     (lambda ()
-       (super 'ACT)
-       (self 'AUTO-BITE)))
+    ;; PROBLEM 9
+    ;; this code is no longer necessary, as calling ACT on a zombie object will
+    ;; invoke the ACT method of it's parent class (autonomous-person)
+    ; (ACT
+    ;  (lambda ()
+    ;    (super 'ACT)
+    ;    (self 'AUTO-BITE)))
     (AUTO-BITE
      (lambda ()
        (if (= (random 2) 0)
