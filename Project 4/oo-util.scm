@@ -2,6 +2,28 @@
 ;; DO NOT TRY TO RUN DIRECTLY IN RACKET
 
 ;;;;;;;;;;
+;; PROBLEM 10
+;; Data abstraction for mixins
+
+(define (make-mixin name methods) (list 'mixin name methods))
+(define (mixin? exp) (eq? 'mixin (first exp)))
+(define (mixin-name exp) (second exp))
+(define (mixin-methods exp) (third exp))
+
+(define (instance-add-mixin! instance mixin)
+  (if (not (mixin? mixin))
+    (error "Expected mixin but got: " mixin)
+    (let ((name (mixin-name mixin))
+           (parent-class (instance 'GET-CLASS))
+           (slots '())
+           (methods (mixin-methods mixin)))
+      (instance
+            'SET-CLASS!
+            (create-class name parent-class slots methods)))))
+            ;; (make-class name parent-class slots `,@methods)))))
+
+
+;;;;;;;;;;
 ;; Bootstrapping the object system
 
 (define (is-a type)
@@ -15,7 +37,8 @@
    'ROOT-CLASS
    #f
    ()
-   ((GET-CLASS (lambda () :class)))))
+   ((GET-CLASS (lambda () :class))
+    (SET-CLASS! (lambda (class) (set! :class class))))))
 
 
 ;;;;;;;;;;

@@ -428,6 +428,9 @@
         (list 'run-file run-file)
         (list 'apply oo-apply)
   (list 'new make-instance) ;; PROBLEM 3
+  ;; PROBLEM 10
+  (list 'default-metaclass default-metaclass)
+  (list 'create-class create-class)
 
         ))
 
