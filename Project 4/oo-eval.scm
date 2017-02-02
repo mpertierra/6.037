@@ -728,3 +728,56 @@
 
 ;; Or to start the game:
 ;(run-game 'your-name)
+
+
+;; PROBLEM 7
+;; A funny excerpt, louis-reasoner and cy-d-fect fight over shotgun
+; At green-building-roof louis-reasoner says -- Hi cy-d-fect 
+; At green-building-roof louis-reasoner says -- I take shotgun from cy-d-fect 
+; At green-building-roof cy-d-fect says -- Hey! You took my shotgun 
+; At green-building-roof cy-d-fect says -- Yaaah! I am upset! 
+; At green-building-roof cy-d-fect says -- I take shotgun from louis-reasoner 
+; At green-building-roof louis-reasoner says -- Hey! You took my shotgun 
+; At green-building-roof louis-reasoner says -- Yaaah! I am upset! 
+;; Running '((me 'GET-CLASS) 'GET-METHODS) gives output below. This works because it looks up all
+;; the methods for me's class (AVATAR), and recursively calls 'GET-METHODS on the parent class.
+;; Thus, we get to see all of the methods defined throughout our "chain" of inheritance.
+;;     AVATAR -> PERSON -> MOBILE-THING -> THING -> CONTAINER -> NAMED-OBJECT -> ROOT-CLASS
+;; We see duplicates because some classes overwrite methods already defined in a parent class (for example, the CONSTRUCTOR method).
+;; To fix this, we need to change the code where the 'GET-METHODS method is defined. This is found
+;; in default-metaclass (all classes inherit from this class). In the implementation of 'GET-METHODS, 
+;; we could just filter out (from the current class's methods) the methods that are already found 
+;; in the list of methods obtained by calling 'GET-METHODS on the parent class.
+; (LOOK-AROUND
+;  GO
+;  CONSTRUCTOR
+;  SAY
+;  PEOPLE-AROUND
+;  STUFF-AROUND
+;  PEEK-AROUND
+;  TAKE
+;  DROP
+;  HAVE-FIT
+;  LOSE
+;  GO-EXIT
+;  GO
+;  ENTER-ROOM
+;  SUFFER
+;  DIE
+;  CHANGE-LOCATION
+;  ENTER-ROOM
+;  LEAVE-ROOM
+;  CONSTRUCTOR
+;  LOCATION
+;  EMIT
+;  DESTROY
+;  CONSTRUCTOR
+;  ADD-THING
+;  DEL-THING
+;  THINGS
+;  HAVE-THING?
+;  CONSTRUCTOR
+;  NAME
+;  DESTROY
+;  GET-CLASS)
+

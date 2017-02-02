@@ -331,11 +331,17 @@
                               (self 'PEOPLE-AROUND)))))
          (if victim
              (if (= (random 2) 0)
-                 (begin
-                   (self 'EMIT (list (self 'NAME) "bites"
-                                     (victim 'NAME)))
-                   (create-zombie self victim
-                                  :restlessness))
+                 ;; PROBLEM 8
+                 (if (null? (filter (is-a 'HUNT-PUZZLE) (victim 'THINGS)))
+                   (begin
+                     (self 'EMIT (list (self 'NAME) "bites"
+                                       (victim 'NAME)))
+                     (create-zombie self victim
+                                    :restlessness))
+                   (begin
+                     (self 'EMIT (list (self 'NAME) "bites at"
+                                   (victim 'NAME) "but is repulsed by hunt-puzzle"))
+                     (self 'SAY (list "uuuuUUUUuuuuh.. need brains to solve hunt-puzzle..."))))
                  (self 'EMIT (list (self 'NAME) "bites at"
                                    (victim 'NAME) "but misses")))
              'nobody-to-bite))))
@@ -383,3 +389,40 @@
          (if success? (our-clock 'TICK) #f)
          (self 'LOOK-AROUND))))
     )))
+
+;; PROBLEM 8
+(define hunt-puzzle
+  (make-class
+    'HUNT-PUZZLE
+    mobile-thing
+    ()
+    ()))
+
+;; PROBLEM 8
+;; To test that it works, I created a bunch (~10) of hunt puzzles, and 
+;; ran the clock, waiting until a zombie attempted to bite a person holding
+;; a hunt-puzzle.
+
+;; Here we see, in clock tick 11, louis-reasoner picks up a hunt-puzzle, and
+;; in clock tick 15, zombie-of-ben-bitdiddle attempts to bite louis-reasoner
+;; but is unable to do so because he is holding a hunt-puzzle.
+
+; --- Clock tick 11 --- 
+; louis-reasoner moves from lobby-10 to great-court 
+; At great-court louis-reasoner says -- I take hunt-puzzle from great-court 
+; cy-d-fect moves from lobby-10 to 10-250 
+; lem-e-tweakit moves from lobby-10 to 10-250 
+; At 10-250 lem-e-tweakit says -- Hi cy-d-fect 
+; gjs moves from lobby-7 to dorm-row 
+; zombie-of-ben-bitdiddle moves from green-building-roof to lab-supply-room 
+
+; --- Clock tick 15 --- 
+; cy-d-fect moves from lobby-10 to 10-250 
+; At 10-250 cy-d-fect says -- Hi lem-e-tweakit 
+; dr-v moves from bldg-26 to infinite-corridor 
+; At infinite-corridor dr-v says -- I take hunt-puzzle from infinite-corridor 
+; zombie-of-george moves from bldg-32-cp-hq to student-street 
+; zombie-of-ben-bitdiddle moves from lab-supply-room to green-building-roof 
+; At green-building-roof zombie-of-ben-bitdiddle says -- Hi louis-reasoner 
+; At green-building-roof zombie-of-ben-bitdiddle bites at louis-reasoner but is repulsed by hunt-puzzle 
+; At green-building-roof zombie-of-ben-bitdiddle says -- uuuuUUUUuuuuh.. need brains to solve hunt-puzzle...

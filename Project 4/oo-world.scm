@@ -182,7 +182,13 @@
               (new mobile-thing name (pick-random places)))
             '(dollar-bill
               math-book
-              coin)))
+              coin))
+  ;; PROBLEM 8
+  (for-each (lambda (name)
+              (new hunt-puzzle name (pick-random places)))
+            '(hunt-puzzle
+              hunt-puzzle
+              hunt-puzzle)))
 
 ;; weapons
 ;;
