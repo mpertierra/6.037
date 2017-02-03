@@ -20,7 +20,6 @@
       (instance
             'SET-CLASS!
             (create-class name parent-class slots methods)))))
-            ;; (make-class name parent-class slots `,@methods)))))
 
 
 ;;;;;;;;;;

@@ -304,60 +304,97 @@
        (super 'DIE perp)))
     )))
 
-(define zombie
-  (make-class
-   'ZOMBIE
-   autonomous-person
-   ()
-   ((CONSTRUCTOR
-     (lambda (name location rest)
-       (super 'CONSTRUCTOR name location rest 0)
-       (self 'SAY (list "uuuuUUUUuuuuh.. brains..."))))
-    (NAME
-     (lambda ()
-       (symbol-append 'zombie-of- :name)))
-    ;; PROBLEM 9
-    ;; this code is no longer necessary, as calling ACT on a zombie object will
-    ;; invoke the ACT method of it's parent class (autonomous-person)
-    ; (ACT
-    ;  (lambda ()
-    ;    (super 'ACT)
-    ;    (self 'AUTO-BITE)))
-    (AUTO-BITE
-     (lambda ()
-       (if (= (random 2) 0)
-           (self 'BITE-SOMEONE)
-           'not-a-biting-mood)))
-    (BITE-SOMEONE
-     (lambda ()
-       (let ((victim (pick-random
-                      (filter (lambda (x) (and ((is-a 'AUTONOMOUS-PERSON) x)
-                                               (not ((is-a 'ZOMBIE) x))))
-                              (self 'PEOPLE-AROUND)))))
-         (if victim
-             (if (= (random 2) 0)
-                 ;; PROBLEM 8
-                 (if (null? (filter (is-a 'HUNT-PUZZLE) (victim 'THINGS)))
-                   (begin
-                     (self 'EMIT (list (self 'NAME) "bites"
-                                       (victim 'NAME)))
-                     (create-zombie self victim
-                                    :restlessness))
-                   (begin
-                     (self 'EMIT (list (self 'NAME) "bites at"
-                                   (victim 'NAME) "but is repulsed by hunt-puzzle"))
-                     (self 'SAY (list "uuuuUUUUuuuuh.. need brains to solve hunt-puzzle..."))))
-                 (self 'EMIT (list (self 'NAME) "bites at"
-                                   (victim 'NAME) "but misses")))
-             'nobody-to-bite))))
-    )))
+;; PROBLEM 11
+(define zombie-mixin
+  (make-mixin 'ZOMBIE
+    (list
+      (list 'BECOME-ZOMBIE
+        (lambda ()
+          (set! :miserly 0) ;; Prevents zombie from taking things
+          (self 'SAY (list "uuuuUUUUuuuuh.. brains..."))))
+      (list 'NAME (lambda () (symbol-append 'zombie-of- :name)))
+      (list 'AUTO-BITE
+       (lambda ()
+         (if (= (random 2) 0)
+             (self 'BITE-SOMEONE)
+             'not-a-biting-mood)))
+      (list 'BITE-SOMEONE
+       (lambda ()
+         (let ((victim (pick-random
+                        (filter (lambda (x) (and ((is-a 'AUTONOMOUS-PERSON) x)
+                                                 (not ((is-a 'ZOMBIE) x))))
+                                (self 'PEOPLE-AROUND)))))
+           (if victim
+               (if (= (random 2) 0)
+                   ;; PROBLEM 8
+                   (if (null? (filter (is-a 'HUNT-PUZZLE) (victim 'THINGS)))
+                     (begin
+                       (self 'EMIT (list (self 'NAME) "bites"
+                                         (victim 'NAME)))
+                       (create-zombie victim))
+                     (begin
+                       (self 'EMIT (list (self 'NAME) "bites at"
+                                     (victim 'NAME) "but is repulsed by hunt-puzzle"))
+                       (self 'SAY (list "uuuuUUUUuuuuh.. need brains to solve hunt-puzzle..."))))
+                   (self 'EMIT (list (self 'NAME) "bites at"
+                                     (victim 'NAME) "but misses")))
+               'nobody-to-bite))))
+      )))
 
-(define (create-zombie perp victim rest)
-  (let ((vic-name (victim 'NAME))
-        (vic-loc (victim 'LOCATION)))
-    (victim 'DIE perp)                    ;; ditch old instance
-    (new zombie vic-name vic-loc rest) ;; build new instance w/ subclass
-    'converted))
+;; ZOMBIE class no longer needed, using ZOMBIE mixin instead
+; (define zombie
+;   (make-class
+;    'ZOMBIE
+;    autonomous-person
+;    ()
+;    ((CONSTRUCTOR
+;      (lambda (name location rest)
+;        (super 'CONSTRUCTOR name location rest 0)
+;        (self 'SAY (list "uuuuUUUUuuuuh.. brains..."))))
+;     (NAME
+;      (lambda ()
+;        (symbol-append 'zombie-of- :name)))
+;     ;; PROBLEM 9
+;     ;; this code is no longer necessary, as calling ACT on a zombie object will
+;     ;; invoke the ACT method of it's parent class (autonomous-person)
+;     ; (ACT
+;     ;  (lambda ()
+;     ;    (super 'ACT)
+;     ;    (self 'AUTO-BITE)))
+;     (AUTO-BITE
+;      (lambda ()
+;        (if (= (random 2) 0)
+;            (self 'BITE-SOMEONE)
+;            'not-a-biting-mood)))
+;     (BITE-SOMEONE
+;      (lambda ()
+;        (let ((victim (pick-random
+;                       (filter (lambda (x) (and ((is-a 'AUTONOMOUS-PERSON) x)
+;                                                (not ((is-a 'ZOMBIE) x))))
+;                               (self 'PEOPLE-AROUND)))))
+;          (if victim
+;              (if (= (random 2) 0)
+;                  ;; PROBLEM 8
+;                  (if (null? (filter (is-a 'HUNT-PUZZLE) (victim 'THINGS)))
+;                    (begin
+;                      (self 'EMIT (list (self 'NAME) "bites"
+;                                        (victim 'NAME)))
+;                      (create-zombie self victim
+;                                     :restlessness))
+;                    (begin
+;                      (self 'EMIT (list (self 'NAME) "bites at"
+;                                    (victim 'NAME) "but is repulsed by hunt-puzzle"))
+;                      (self 'SAY (list "uuuuUUUUuuuuh.. need brains to solve hunt-puzzle..."))))
+;                  (self 'EMIT (list (self 'NAME) "bites at"
+;                                    (victim 'NAME) "but misses")))
+;              'nobody-to-bite))))
+;     )))
+
+;; PROBLEM 11
+(define (create-zombie victim)
+    (instance-add-mixin! victim zombie-mixin)
+    (victim 'BECOME-ZOMBIE)
+    'converted)
 
 (define avatar
   (make-class
