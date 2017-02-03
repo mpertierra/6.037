@@ -574,7 +574,11 @@
 			       (if (read-slot self ':parent-class)
 				   (invoke (read-slot self ':parent-class) 'GET-METHODS)
 				   '()))))
-       
+
+
+       ;; PROBLEM 12
+       (GET-PARENT-CLASS ,(lambda (self) (read-slot self ':parent-class)))
+
        ;; PROBLEM 5
        (GET-TYPES ,(lambda (self)
          (append (list (read-slot self ':name))

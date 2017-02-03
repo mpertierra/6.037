@@ -188,7 +188,13 @@
               (new hunt-puzzle name (pick-random places)))
             '(hunt-puzzle
               hunt-puzzle
-              hunt-puzzle)))
+              hunt-puzzle))
+  ;; PROBLEM 12
+  (for-each (lambda (name)
+              (new weaponized-caffeine name (pick-random places)))
+            '(weaponized-caffeine
+              weaponized-caffeine
+              weaponized-caffeine)))
 
 ;; weapons
 ;;

@@ -23,6 +23,13 @@
 
 
 ;;;;;;;;;;
+;; PROBLEM 12
+
+(define (pop-class! instance)
+  (instance 'SET-CLASS! ((instance 'GET-CLASS) 'GET-PARENT-CLASS)))
+
+
+;;;;;;;;;;
 ;; Bootstrapping the object system
 
 (define (is-a type)
@@ -37,6 +44,7 @@
    #f
    ()
    ((GET-CLASS (lambda () :class))
+    ;; PROBLEM 10
     (SET-CLASS! (lambda (class) (set! :class class))))))
 
 

@@ -302,6 +302,15 @@
        (self 'SAY (list "Lights..growing..dim..."))
        (our-clock 'REMOVE-CALLBACK self 'time-passes)
        (super 'DIE perp)))
+    ;; PROBLEM 12
+    (AUTO-CURE
+      (lambda ()
+         (let ((zombie (pick-random (filter (is-a 'ZOMBIE) (self 'PEOPLE-AROUND))))
+               (antidote (pick-random (filter (is-a 'WEAPONIZED-CAFFEINE) (self 'THINGS)))))
+            (cond
+              ((not antidote) 'no-cure)
+              ((not zombie) 'no-zombie-to-cure)
+              (else (antidote 'HIT self zombie))))))
     )))
 
 ;; PROBLEM 11
@@ -468,3 +477,23 @@
 ; At green-building-roof zombie-of-ben-bitdiddle says -- Hi louis-reasoner 
 ; At green-building-roof zombie-of-ben-bitdiddle bites at louis-reasoner but is repulsed by hunt-puzzle 
 ; At green-building-roof zombie-of-ben-bitdiddle says -- uuuuUUUUuuuuh.. need brains to solve hunt-puzzle...
+
+
+;; PROBLEM 12
+(define weaponized-caffeine
+  (make-class
+    'WEAPONIZED-CAFFEINE
+    weapon
+    ()
+   ((CONSTRUCTOR
+     (lambda (name location)
+       (super 'CONSTRUCTOR name location 0)))
+    (HIT
+     (lambda (perp target)
+      (cond
+        (((is-a 'ZOMBIE) target)
+          (pop-class! target)
+          (self 'DESTROY)
+          (perp 'EMIT (list (perp 'NAME) "cured" (target 'NAME) "with" (self 'NAME) "!!!")))
+        (else
+          (self 'DESTROY))))))))
